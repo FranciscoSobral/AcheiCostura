@@ -74,8 +74,8 @@ export const Header = () => {
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={user.avatar} alt={user.name || 'Usuário'} />
+                        <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
                       </Avatar>
                       <span className="hidden md:block text-sm font-medium">{user.name}</span>
                     </button>

@@ -30,7 +30,7 @@ export interface User {
   coins: number;
   city?: string;
   state?: string;
-  role: 'seamstress' | 'company' | 'USER' | 'EMPRESA';
+  role: 'seamstress' | 'company' | 'USER' | 'EMPRESA' | 'COUTURIER';
 }
 
 export interface Application {
