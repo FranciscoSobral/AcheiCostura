@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useCadastro } from '../context/CadastroContext';
-import { updateUser, uploadOtherImages, uploadProfileImage } from '../services/api';
 import SpeechButton from './SpeechButton';
 import ImageGalleryModal from './ImageGalleryModal';
 
@@ -11,7 +10,7 @@ interface Step3Props {
 
 const Step3PerfilProfissional: React.FC<Step3Props> = ({ onBack }) => {
   const navigate = useNavigate();
-  const { userId, step3Data, setStep3Data, setLoading, error, setError, resetCadastro } = useCadastro();
+  const { step3Data, setStep3Data, setLoading, error, setError, resetCadastro } = useCadastro();
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
     step3Data.profileImagePreview || null
   );
@@ -107,28 +106,8 @@ const Step3PerfilProfissional: React.FC<Step3Props> = ({ onBack }) => {
     setSaving(true);
 
     try {
-      // Salvar dados no backend
-      if (!userId) {
-        throw new Error('Usuário não identificado. Refaça o cadastro.');
-      }
-
-      const payload: Record<string, string> = {};
-      if (step3Data.phone) payload.phone = step3Data.phone;
-      if (step3Data.whatsapp) payload.whatsapp = step3Data.whatsapp;
-      if (step3Data.instagram) payload.instagram = step3Data.instagram;
-      if (step3Data.website) payload.website = step3Data.website;
-
-      if (Object.keys(payload).length > 0) {
-        await updateUser(userId, payload);
-      }
-
-      if (step3Data.profileImage) {
-        await uploadProfileImage(step3Data.profileImage);
-      }
-
-      if (step3Data.otherImages.length > 0) {
-        await uploadOtherImages(step3Data.otherImages);
-      }
+      // Simular salvamento - adaptar para API real
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       if (action === 'save') {
         alert('Informações salvas com sucesso!');

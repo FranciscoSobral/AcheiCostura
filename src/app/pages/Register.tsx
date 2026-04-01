@@ -43,7 +43,7 @@ export const Register = () => {
     setLoading(true);
 
     try {
-      const { user, token } = await register(name, email, password, 'COUTURIER');
+      const { user, token } = await register(name, email, password);
       login(user, token);
       toast.success('Conta criada com sucesso! 🎉');
       navigate('/');

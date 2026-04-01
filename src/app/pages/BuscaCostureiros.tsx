@@ -1,13 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
-import {
-  fetchCouturiers,
-  fetchProfileImage,
-  getEnterpriseCoinsBalance,
-  getEnterpriseUnlockedProfiles,
-  unlockCouturierProfile,
-} from '../services/api';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -15,15 +8,16 @@ import { Checkbox } from '../components/ui/checkbox';
 import { Slider } from '../components/ui/slider';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
-import {
-  Search,
-  Filter,
-  MapPin,
-  Star,
+import { 
+  Search, 
+  Filter, 
+  MapPin, 
+  Star, 
   CheckCircle,
   Lock,
   Unlock,
   SlidersHorizontal,
+  X
 } from 'lucide-react';
 import {
   Select,
@@ -31,9 +25,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../components/ui/select';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '../components/ui/drawer';
+} from "../components/ui/select";
+import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle, DrawerHeader } from "../components/ui/drawer";
+import { useIsMobile } from '../components/ui/use-mobile';
 
+// Tipos e mocks locais
 type CouturierDTO = {
   id: string;
   name: string;
@@ -50,7 +46,68 @@ type CouturierDTO = {
   availability: string;
 };
 
-const DEFAULT_AVATAR_URL = 'https://placehold.co/400x400?text=Costureiro';
+const MOCK_COUTUREIROS: CouturierDTO[] = [
+  {
+    id: 'c1',
+    name: 'Ana Costa',
+    imageUrl: 'https://images.unsplash.com/photo-1730047614191-3fc94b73c854?w=400&h=400&fit=crop',
+    city: 'São Paulo',
+    state: 'SP',
+    ratingAverage: 4.8,
+    category: 'Moda Praia',
+    verified: true,
+    unlocked: true,
+    machines: ['Reta', 'Overloque'],
+    factionType: ['Corte e Costura'],
+    experienceYears: '5-10',
+    availability: 'MORNING_AFTERNOON',
+  },
+  {
+    id: 'c2',
+    name: 'Maria Silva',
+    imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop',
+    city: 'Rio de Janeiro',
+    state: 'RJ',
+    ratingAverage: 4.9,
+    category: 'Alta Costura',
+    verified: false,
+    unlocked: false,
+    machines: ['Reta', 'Galoneira'],
+    factionType: ['Moda Íntima'],
+    experienceYears: '10+',
+    availability: 'AFTERNOON',
+  },
+  {
+    id: 'c3',
+    name: 'Joana Prado',
+    imageUrl: 'https://images.unsplash.com/photo-1759367205570-fd522fedc13a?w=400&h=400&fit=crop',
+    city: 'Belo Horizonte',
+    state: 'MG',
+    ratingAverage: 4.5,
+    category: 'Jeans',
+    verified: true,
+    unlocked: true,
+    machines: ['Overloque', 'Ponto Cruzado'],
+    factionType: ['Lavanderia'],
+    experienceYears: '2-5',
+    availability: 'WEEKENDS',
+  },
+  {
+    id: 'c4',
+    name: 'Clara Nunes',
+    imageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
+    city: 'Curitiba',
+    state: 'PR',
+    ratingAverage: 5.0,
+    category: 'Bordado',
+    verified: false,
+    unlocked: false,
+    machines: ['Bordadeira'],
+    factionType: ['Bordado'],
+    experienceYears: '10+',
+    availability: 'MORNING',
+  }
+];
 
 const FILTROS_PADRAO = {
   search: '',
@@ -65,254 +122,92 @@ const FILTROS_PADRAO = {
   sortBy: 'relevance',
 };
 
-const parseListField = (value?: string | string[]) => {
-  if (!value) return [];
-  if (Array.isArray(value)) return value;
-
-  const trimmed = value.trim();
-  if (!trimmed) return [];
-
-  if (trimmed.startsWith('[')) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      return Array.isArray(parsed) ? parsed : [String(parsed)];
-    } catch {
-      return [trimmed];
-    }
-  }
-
-  return trimmed
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-};
-
 export const BuscaCostureiros = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, updateCoins } = useAuth();
+  const { user, updateCoins } = useAuth();
+  const isMobile = useIsMobile();
   const [filtros, setFiltros] = useState(FILTROS_PADRAO);
-  const [costureiros, setCostureiros] = useState<CouturierDTO[]>([]);
+  const [costureiros, setCostureiros] = useState<CouturierDTO[]>(MOCK_COUTUREIROS);
   const [loading, setLoading] = useState(false);
   const [desbloqueandoId, setDesbloqueandoId] = useState<string | null>(null);
-  const imageFetchStatusRef = useRef<Record<string, 'loading' | 'done' | 'failed'>>({});
-  const imageCacheRef = useRef<Record<string, string>>({});
 
+  // Simula busca
   useEffect(() => {
-    const syncEnterpriseBalance = async () => {
-      if (authLoading || !user?.id) return;
-      try {
-        const balance = await getEnterpriseCoinsBalance(user.id);
-        updateCoins(balance);
-      } catch (error) {
-        console.error('Erro ao sincronizar saldo de moedas:', error);
-      }
-    };
-
-    syncEnterpriseBalance();
-  }, [authLoading, user?.id]);
-
-  useEffect(() => {
-    const loadCouturiers = async () => {
-      if (authLoading) return;
+    const fetchCostureiros = async () => {
       setLoading(true);
+      // Simula delay de rede
+      await new Promise(r => setTimeout(r, 600));
 
-      try {
-        let unlockedByEnterprise = new Set<string>();
-        if (user?.id) {
-          try {
-            const unlockedProfiles = await getEnterpriseUnlockedProfiles(user.id);
-            unlockedByEnterprise = new Set(
-              unlockedProfiles
-                .map((profile) => profile?.couturierId)
-                .filter((id): id is string => Boolean(id))
-            );
-          } catch (unlockProfilesError) {
-            console.error('Erro ao buscar perfis desbloqueados da empresa:', unlockProfilesError);
-          }
-        }
+      let result = [...MOCK_COUTUREIROS];
 
-        const apiData = await fetchCouturiers({
-          search: filtros.search || undefined,
-          city: filtros.city || undefined,
-          category: filtros.specialty.length === 1 ? filtros.specialty[0] : undefined,
-          verified: filtros.verified ? true : undefined,
-          preferUnlockStatus: Boolean(user?.id),
-        });
-
-        let result: CouturierDTO[] = apiData.map((item) => {
-          const machines = parseListField(item.machines);
-          const factionType = parseListField(item.factionType);
-
-          return {
-            id: item.id,
-            name: item.name || 'Profissional',
-            imageUrl: imageCacheRef.current[item.id] || DEFAULT_AVATAR_URL,
-            city: item.city || '',
-            state: item.state || '',
-            ratingAverage: item.ratingAverage ?? item.rating ?? 0,
-            category: item.category || 'Costura Geral',
-            verified: Boolean(item.verified),
-            unlocked: Boolean(item.unlocked) || unlockedByEnterprise.has(item.id),
-            machines,
-            factionType,
-            experienceYears: item.sewingExperienceYears || '',
-            availability: item.availability || '',
-          };
-        });
-
-        if (filtros.search) {
-          const s = filtros.search.toLowerCase();
-          result = result.filter(
-            (c) => c.name.toLowerCase().includes(s) || c.category.toLowerCase().includes(s)
-          );
-        }
-
-        if (filtros.city) {
-          result = result.filter((c) => c.city.toLowerCase().includes(filtros.city.toLowerCase()));
-        }
-
-        if (filtros.minRating > 0) {
-          result = result.filter((c) => c.ratingAverage >= filtros.minRating);
-        }
-
-        if (filtros.verified) {
-          result = result.filter((c) => c.verified);
-        }
-
-        if (filtros.specialty.length > 0) {
-          result = result.filter((c) => filtros.specialty.includes(c.category));
-        }
-
-        if (filtros.machines.length > 0) {
-          result = result.filter((c) => c.machines.some((m) => filtros.machines.includes(m)));
-        }
-
-        if (filtros.experienceYears && filtros.experienceYears !== 'all') {
-          result = result.filter((c) => c.experienceYears === filtros.experienceYears);
-        }
-
-        if (filtros.availability && filtros.availability !== 'all') {
-          result = result.filter((c) => c.availability === filtros.availability);
-        }
-
-        if (filtros.sortBy === 'rating') {
-          result.sort((a, b) => b.ratingAverage - a.ratingAverage);
-        } else if (filtros.sortBy === 'experience') {
-          result.sort((a, b) => b.experienceYears.localeCompare(a.experienceYears));
-        }
-        setCostureiros(result);
-      } catch (error) {
-        console.error('Erro ao carregar costureiros:', error);
-        toast.error('Erro ao carregar costureiros. Tente novamente.');
-        setCostureiros([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const debounce = setTimeout(loadCouturiers, 300);
-    return () => clearTimeout(debounce);
-  }, [authLoading, filtros, user?.id]);
-
-  useEffect(() => {
-    const loadImages = async () => {
-      const candidates = costureiros.filter((c) => {
-        const status = imageFetchStatusRef.current[c.id];
-        return c.unlocked && !status;
-      });
-
-      if (candidates.length === 0) return;
-
-      for (const candidate of candidates) {
-        imageFetchStatusRef.current[candidate.id] = 'loading';
-        const imageData = await fetchProfileImage(candidate.id);
-        imageFetchStatusRef.current[candidate.id] = imageData ? 'done' : 'failed';
-
-        if (!imageData) continue;
-        imageCacheRef.current[candidate.id] = imageData;
-
-        setCostureiros((prev) =>
-          prev.map((c) => (c.id === candidate.id ? { ...c, imageUrl: imageData } : c))
+      if (filtros.search) {
+        const s = filtros.search.toLowerCase();
+        result = result.filter(c => 
+          c.name.toLowerCase().includes(s) || 
+          c.category.toLowerCase().includes(s)
         );
       }
+      if (filtros.city) {
+        result = result.filter(c => c.city.toLowerCase().includes(filtros.city.toLowerCase()));
+      }
+      if (filtros.minRating > 0) {
+        result = result.filter(c => c.ratingAverage >= filtros.minRating);
+      }
+      if (filtros.verified) {
+        result = result.filter(c => c.verified);
+      }
+      if (filtros.specialty.length > 0) {
+        result = result.filter(c => filtros.specialty.includes(c.category));
+      }
+      if (filtros.machines.length > 0) {
+        result = result.filter(c => c.machines.some(m => filtros.machines.includes(m)));
+      }
+      if (filtros.experienceYears && filtros.experienceYears !== 'all') {
+        result = result.filter(c => c.experienceYears === filtros.experienceYears);
+      }
+      if (filtros.availability && filtros.availability !== 'all') {
+        result = result.filter(c => c.availability === filtros.availability);
+      }
+
+      // Sort
+      if (filtros.sortBy === 'rating') {
+        result.sort((a, b) => b.ratingAverage - a.ratingAverage);
+      } else if (filtros.sortBy === 'experience') {
+        // Mock simple sort
+        result.sort((a, b) => b.experienceYears.localeCompare(a.experienceYears));
+      }
+
+      setCostureiros(result);
+      setLoading(false);
     };
 
-    loadImages();
-  }, [costureiros]);
+    const debounce = setTimeout(fetchCostureiros, 300);
+    return () => clearTimeout(debounce);
+  }, [filtros]);
 
-  const handleUnlock = async (couturierId: string, costureiroName: string) => {
+  const handleUnlock = async (id: string, costureiroName: string) => {
     if (!user) {
-      toast.error('Voce precisa estar logado para desbloquear perfis.');
+      toast.error('Você precisa estar logado para desbloquear perfis.');
       return;
     }
 
-    /*
-    if (!isEnterpriseRole(user.role)) {
-      console.warn('Usuario sem permissao tentou desbloquear perfil:', user);
-      toast.error('Somente contas de empresa podem desbloquear perfis.');
+    // Usamos um valor padrão se user.coins for undefined
+    const userCoins = user.coins || 0;
+
+    if (userCoins < 1) {
+      toast.error('Saldo de moedas insuficiente. Adquira mais moedas no seu painel.');
       return;
     }
 
-    if (!user.id) {
-      toast.error('Nao foi possivel identificar a empresa logada.');
-      return;
-    }
-    */
-
-    const enterpriseId = user.id;
-    if (!enterpriseId) {
-      toast.error('Nao foi possivel identificar a empresa logada.');
-      return;
-    }
-
-    setDesbloqueandoId(couturierId);
-
-    try {
-      const currentBalance = await getEnterpriseCoinsBalance(enterpriseId);
-      updateCoins(currentBalance);
-
-      if (currentBalance < 1) {
-        toast.error('Saldo de moedas insuficiente.');
-        return;
-      }
-
-      await unlockCouturierProfile(enterpriseId, couturierId);
-      const updatedBalance = await getEnterpriseCoinsBalance(enterpriseId);
-      updateCoins(updatedBalance);
-
-      setCostureiros((prev) =>
-        prev.map((c) => (c.id === couturierId ? { ...c, unlocked: true } : c))
-      );
-      delete imageFetchStatusRef.current[couturierId];
-
-      toast.success(`Perfil de ${costureiroName} desbloqueado com sucesso.`);
-    } catch (error: any) {
-      const message = String(error?.message || '');
-      if (message.includes('403')) {
-        try {
-          const refreshedUnlockedProfiles = await getEnterpriseUnlockedProfiles(enterpriseId);
-          const unlockedIds = new Set(
-            refreshedUnlockedProfiles
-              .map((profile) => profile?.couturierId)
-              .filter((id): id is string => Boolean(id))
-          );
-          const unlockedNow = unlockedIds.has(couturierId);
-          if (unlockedNow) {
-            setCostureiros((prev) =>
-              prev.map((c) => (c.id === couturierId ? { ...c, unlocked: true } : c))
-            );
-            toast.success(`Perfil de ${costureiroName} ja estava desbloqueado.`);
-            return;
-          }
-        } catch (refreshError) {
-          console.error('Erro ao confirmar status de desbloqueio apos 403:', refreshError);
-        }
-      }
-
-      toast.error(error?.message || 'Nao foi possivel desbloquear este perfil.');
-    } finally {
-      setDesbloqueandoId(null);
-    }
+    setDesbloqueandoId(id);
+    
+    // Simula API de desbloqueio
+    await new Promise(r => setTimeout(r, 800));
+    
+    setCostureiros(prev => prev.map(c => c.id === id ? { ...c, unlocked: true } : c));
+    updateCoins(userCoins - 1);
+    toast.success(`Perfil de ${costureiroName} desbloqueado com sucesso!`);
+    setDesbloqueandoId(null);
   };
 
   const limparFiltros = () => {
@@ -325,22 +220,18 @@ export const BuscaCostureiros = () => {
         <h3 className="font-semibold text-gray-900 flex items-center gap-2">
           <Filter className="w-4 h-4" /> Filtros
         </h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={limparFiltros}
-          className="text-sm h-8 px-2 text-gray-500 hover:text-gray-900"
-        >
+        <Button variant="ghost" size="sm" onClick={limparFiltros} className="text-sm h-8 px-2 text-gray-500 hover:text-gray-900">
           Limpar
         </Button>
       </div>
 
+      {/* Buscar por nome */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">Buscar</label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Nome ou especialidade"
+          <Input 
+            placeholder="Nome ou especialidade" 
             className="pl-9"
             value={filtros.search}
             onChange={(e) => setFiltros({ ...filtros, search: e.target.value })}
@@ -348,60 +239,58 @@ export const BuscaCostureiros = () => {
         </div>
       </div>
 
+      {/* Especialidades */}
       <div className="space-y-3">
         <label className="text-sm font-medium text-gray-700">Especialidade</label>
         <div className="space-y-2">
-          {['Moda Praia', 'Jeans', 'Bordado', 'Malharia', 'Alta Costura'].map((esp) => (
+          {['Moda Praia', 'Jeans', 'Bordado', 'Malharia', 'Alta Costura'].map(esp => (
             <div key={esp} className="flex items-center space-x-2">
-              <Checkbox
-                id={`esp-${esp}`}
+              <Checkbox 
+                id={`esp-${esp}`} 
                 checked={filtros.specialty.includes(esp)}
                 onCheckedChange={(checked) => {
-                  setFiltros((prev) => ({
+                  setFiltros(prev => ({
                     ...prev,
-                    specialty: checked
-                      ? [...prev.specialty, esp]
-                      : prev.specialty.filter((s) => s !== esp),
-                  }));
+                    specialty: checked 
+                      ? [...prev.specialty, esp] 
+                      : prev.specialty.filter(s => s !== esp)
+                  }))
                 }}
               />
-              <label htmlFor={`esp-${esp}`} className="text-sm text-gray-600 cursor-pointer">
-                {esp}
-              </label>
+              <label htmlFor={`esp-${esp}`} className="text-sm text-gray-600 cursor-pointer">{esp}</label>
             </div>
           ))}
         </div>
       </div>
 
+      {/* Cidade */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">Cidade</label>
-        <Input
-          placeholder="Digite a cidade"
+        <Input 
+          placeholder="Digite a cidade" 
           value={filtros.city}
           onChange={(e) => setFiltros({ ...filtros, city: e.target.value })}
         />
       </div>
 
+      {/* Avaliação Mínima */}
       <div className="space-y-3">
         <div className="flex justify-between items-center">
-          <label className="text-sm font-medium text-gray-700">Avaliacao minima</label>
-          <span className="text-sm text-gray-500">
-            {filtros.minRating > 0 ? `${filtros.minRating} estrelas` : 'Qualquer'}
-          </span>
+          <label className="text-sm font-medium text-gray-700">Avaliação Mínima</label>
+          <span className="text-sm text-gray-500">{filtros.minRating > 0 ? `${filtros.minRating} estrelas` : 'Qualquer'}</span>
         </div>
-        <Slider
-          min={0}
-          max={5}
-          step={0.5}
-          value={[filtros.minRating]}
-          onValueChange={([val]) => setFiltros({ ...filtros, minRating: val })}
+        <Slider 
+          min={0} max={5} step={0.5} 
+          value={[filtros.minRating]} 
+          onValueChange={([val]) => setFiltros({ ...filtros, minRating: val })} 
         />
       </div>
 
+      {/* Experiência */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Experiencia</label>
-        <Select
-          value={filtros.experienceYears}
+        <label className="text-sm font-medium text-gray-700">Experiência</label>
+        <Select 
+          value={filtros.experienceYears} 
           onValueChange={(val) => setFiltros({ ...filtros, experienceYears: val })}
         >
           <SelectTrigger>
@@ -417,17 +306,15 @@ export const BuscaCostureiros = () => {
         </Select>
       </div>
 
+      {/* Apenas Verificados */}
       <div className="flex items-center space-x-2 pt-2">
-        <Checkbox
-          id="verified"
+        <Checkbox 
+          id="verified" 
           checked={filtros.verified}
           onCheckedChange={(checked) => setFiltros({ ...filtros, verified: checked as boolean })}
         />
-        <label
-          htmlFor="verified"
-          className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-1"
-        >
-          Apenas verificados <CheckCircle className="w-3 h-3 text-green-600" />
+        <label htmlFor="verified" className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-1">
+          Apenas Verificados <CheckCircle className="w-3 h-3 text-green-600" />
         </label>
       </div>
     </div>
@@ -439,28 +326,34 @@ export const BuscaCostureiros = () => {
         <div className="container mx-auto px-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">Encontre costureiros ideais</h1>
           <p className="text-[#E6F3F0] text-lg max-w-2xl">
-            Use os filtros para encontrar profissionais e desbloqueie perfis para ver o contato
-            completo.
+            Utilize nossos filtros avançados para encontrar o profissional perfeito para sua demanda. Desbloqueie perfis para ver contato e portfólio completo.
           </p>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
+          
+          {/* Sidebar Filters - Desktop */}
           <aside className="hidden lg:block w-72 shrink-0">
             <Card className="sticky top-24">
-              <CardContent className="p-6">{renderFiltros()}</CardContent>
+              <CardContent className="p-6">
+                {renderFiltros()}
+              </CardContent>
             </Card>
           </aside>
 
+          {/* Main Content */}
           <main className="flex-1">
+            
+            {/* Top Bar Actions */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
               <p className="text-gray-600">
-                Mostrando{' '}
-                <span className="font-semibold text-gray-900">{costureiros.length}</span> resultados
+                Mostrando <span className="font-semibold text-gray-900">{costureiros.length}</span> resultados
               </p>
-
+              
               <div className="flex items-center gap-3 w-full sm:w-auto">
+                {/* Drawer Filters - Mobile */}
                 <div className="lg:hidden w-full sm:w-auto">
                   <Drawer>
                     <DrawerTrigger asChild>
@@ -472,13 +365,15 @@ export const BuscaCostureiros = () => {
                       <DrawerHeader>
                         <DrawerTitle>Filtros</DrawerTitle>
                       </DrawerHeader>
-                      <div className="p-4 max-h-[70vh] overflow-y-auto">{renderFiltros()}</div>
+                      <div className="p-4 max-h-[70vh] overflow-y-auto">
+                        {renderFiltros()}
+                      </div>
                     </DrawerContent>
                   </Drawer>
                 </div>
 
-                <Select
-                  value={filtros.sortBy}
+                <Select 
+                  value={filtros.sortBy} 
                   onValueChange={(val) => setFiltros({ ...filtros, sortBy: val })}
                 >
                   <SelectTrigger className="w-full sm:w-[200px]">
@@ -486,50 +381,40 @@ export const BuscaCostureiros = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="relevance">Mais relevantes</SelectItem>
-                    <SelectItem value="rating">Melhor avaliacao</SelectItem>
+                    <SelectItem value="rating">Melhor avaliação</SelectItem>
                     <SelectItem value="recent">Mais recentes</SelectItem>
-                    <SelectItem value="experience">Mais experiencia</SelectItem>
+                    <SelectItem value="experience">Mais experiência</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
+            {/* Results Grid */}
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
+                {[1, 2, 3, 4, 5, 6].map(i => (
                   <Card key={i} className="animate-pulse h-80 bg-gray-100 border-none" />
                 ))}
               </div>
             ) : costureiros.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {costureiros.map((c) => {
-                  const isLocked = !c.unlocked;
-
+                {costureiros.map(c => {
+                  const isLocked = !c.verified && !c.unlocked;
                   return (
-                    <Card
-                      key={c.id}
-                      className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col group"
-                    >
+                    <Card key={c.id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col group">
                       <div className="relative h-48 bg-gray-200">
-                        <img
-                          src={c.imageUrl}
-                          alt={c.name}
+                        <img 
+                          src={c.imageUrl} 
+                          alt={c.name} 
                           className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${isLocked ? 'blur-[8px]' : ''}`}
-                          onError={(e) => {
-                            e.currentTarget.src = DEFAULT_AVATAR_URL;
-                          }}
                         />
-
                         {isLocked && (
                           <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white p-4">
                             <Lock className="w-10 h-10 mb-2 opacity-80" />
-                            <span className="font-semibold text-center">Perfil oculto</span>
-                            <span className="text-xs text-center text-gray-200 mt-1">
-                              Requer desbloqueio
-                            </span>
+                            <span className="font-semibold text-center">Perfil Oculto</span>
+                            <span className="text-xs text-center text-gray-200 mt-1">Requer desbloqueio</span>
                           </div>
                         )}
-
                         {c.verified && (
                           <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
                             <CheckCircle className="w-4 h-4 text-[#006D5B]" />
@@ -537,7 +422,7 @@ export const BuscaCostureiros = () => {
                           </div>
                         )}
                       </div>
-
+                      
                       <CardContent className="p-5 flex-1 flex flex-col">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-bold text-lg text-gray-900 truncate pr-2">
@@ -551,16 +436,11 @@ export const BuscaCostureiros = () => {
 
                         <div className="flex items-center text-sm text-gray-500 mb-4 gap-1">
                           <MapPin className="w-4 h-4 shrink-0" />
-                          <span className="truncate">
-                            {c.city}, {c.state}
-                          </span>
+                          <span className="truncate">{c.city}, {c.state}</span>
                         </div>
 
                         <div className="flex flex-wrap gap-2 mb-4">
-                          <Badge
-                            variant="secondary"
-                            className="bg-[#E6F3F0] text-[#006D5B] hover:bg-[#E6F3F0]"
-                          >
+                          <Badge variant="secondary" className="bg-[#E6F3F0] text-[#006D5B] hover:bg-[#E6F3F0]">
                             {c.category}
                           </Badge>
                           {c.experienceYears && (
@@ -572,7 +452,7 @@ export const BuscaCostureiros = () => {
 
                         <div className="mt-auto pt-4 border-t border-gray-100">
                           {isLocked ? (
-                            <Button
+                            <Button 
                               className="w-full bg-[#006D5B] hover:bg-[#005a4b] text-white flex gap-2 items-center"
                               onClick={() => handleUnlock(c.id, c.name)}
                               disabled={desbloqueandoId === c.id}
@@ -581,17 +461,17 @@ export const BuscaCostureiros = () => {
                                 <span className="animate-pulse">Desbloqueando...</span>
                               ) : (
                                 <>
-                                  <Unlock className="w-4 h-4" /> Desbloquear (1 moeda)
+                                  <Unlock className="w-4 h-4" /> Desbloquear (1 Moeda)
                                 </>
                               )}
                             </Button>
                           ) : (
-                            <Button
+                            <Button 
                               variant="outline"
                               className="w-full border-[#006D5B] text-[#006D5B] hover:bg-[#F2F9F7] flex gap-2"
                               onClick={() => navigate(`/costureiro/${c.id}`)}
                             >
-                              Ver perfil completo
+                              Ver Perfil Completo
                             </Button>
                           )}
                         </div>
@@ -607,13 +487,9 @@ export const BuscaCostureiros = () => {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Nenhum costureiro encontrado</h3>
                 <p className="text-gray-500 max-w-md mb-6">
-                  Nao encontramos profissionais com os filtros atuais. Tente ajustar a busca.
+                  Não encontramos nenhum profissional com os filtros selecionados. Tente ajustar os filtros ou limpar sua busca.
                 </p>
-                <Button
-                  onClick={limparFiltros}
-                  variant="outline"
-                  className="border-[#006D5B] text-[#006D5B]"
-                >
+                <Button onClick={limparFiltros} variant="outline" className="border-[#006D5B] text-[#006D5B]">
                   Limpar todos os filtros
                 </Button>
               </div>

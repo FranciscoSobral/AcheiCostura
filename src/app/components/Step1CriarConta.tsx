@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useCadastro } from '../context/CadastroContext';
 import { useAuth } from '../context/AuthContext';
-import { register as registerApi } from '../services/api';
 import SpeechButton from './SpeechButton';
 
 const Step1CriarConta: React.FC = () => {
@@ -70,19 +69,22 @@ const Step1CriarConta: React.FC = () => {
     setError(null);
 
     try {
-      if (!userType) {
-        throw new Error('Selecione o tipo de conta');
-      }
+      // Simular criação de conta - adaptar para API real
+      const mockUserId = `user_${Date.now()}`;
+      
+      // Mock de login após registro
+      const mockUser = {
+        id: mockUserId,
+        name: step1Data.name,
+        email: step1Data.email,
+        role: userType === 'COUTURIER' ? 'USER' : 'EMPRESA',
+        coins: 100,
+      };
+      
+      const mockToken = 'mock_token_' + Date.now();
+      login(mockUser, mockToken);
 
-      const { user, token } = await registerApi(
-        step1Data.name,
-        step1Data.email,
-        step1Data.password,
-        userType
-      );
-
-      login(user, token);
-      setUserId(user.id);
+      setUserId(mockUserId);
       setCurrentStep(2);
     } catch (err: any) {
       setError(err?.message || 'Erro ao criar conta. Tente novamente.');

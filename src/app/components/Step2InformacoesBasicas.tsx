@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useCadastro } from '../context/CadastroContext';
-import { updateUser } from '../services/api';
 import SpeechButton from './SpeechButton';
 
 interface Step2Props {
@@ -9,7 +8,7 @@ interface Step2Props {
 }
 
 const Step2InformacoesBasicas: React.FC<Step2Props> = ({ onNext, onBack }) => {
-  const { userType, userId, step2Data, setStep2Data, setLoading, setError } = useCadastro();
+  const { userType, step2Data, setStep2Data, setLoading, setError } = useCadastro();
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const estados = [
@@ -105,32 +104,8 @@ const Step2InformacoesBasicas: React.FC<Step2Props> = ({ onNext, onBack }) => {
     setError(null);
 
     try {
-      if (!userType) {
-        throw new Error('Tipo de conta nÃ£o informado.');
-      }
-      if (!step2Data.city || !step2Data.state) {
-        throw new Error('Preencha cidade e estado.');
-      }
-
-      if (!userId) {
-        throw new Error('UsuÃ¡rio nÃ£o identificado. Refazer cadastro.');
-      }
-
-      await updateUser(userId, {
-        category: step2Data.category || undefined,
-        city: step2Data.city,
-        state: step2Data.state,
-        country: step2Data.country || undefined,
-        zipCode: step2Data.zipCode || undefined,
-        street: step2Data.street || undefined,
-        sewingExperienceYears: step2Data.sewingExperienceYears || undefined,
-        teamSize: step2Data.teamSize || undefined,
-        availability: step2Data.availability || undefined,
-        specialty: step2Data.specialty || undefined,
-        machines: step2Data.machines || undefined,
-        factionType: step2Data.factionType || undefined,
-      });
-
+      // Simular salvamento - adaptar para API real
+      await new Promise((resolve) => setTimeout(resolve, 500));
       onNext();
     } catch (err: any) {
       setError('Erro ao salvar informações. Tente novamente.');
