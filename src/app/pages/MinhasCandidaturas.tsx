@@ -6,6 +6,8 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
+import { fetchServiceById, listMyApplications } from '../services/api';
+import type { Service } from '../types';
 
 interface Application {
   id: string;
@@ -42,6 +44,13 @@ const STATUS_CONFIG = {
   },
 };
 
+const mapApiStatusToUi = (status: string): Application['status'] => {
+  const upper = (status || '').toUpperCase();
+  if (upper === 'ACCEPTED') return 'accepted';
+  if (upper === 'REJECTED') return 'rejected';
+  return 'pending';
+};
+
 export function MinhasCandidaturas() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,83 +63,46 @@ export function MinhasCandidaturas() {
   const loadApplications = async () => {
     try {
       setLoading(true);
-      
-      // Dados mockados para demonstração
-      // Em produção, substituir por: const data = await getMinhasCandidaturas();
-      const mockData: Application[] = [
-        {
-          id: '1',
-          jobId: '101',
-          jobTitle: 'Costura de Vestidos de Festa - Alto Padrão',
-          company: 'Elegance Fashion',
-          companyLogo: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=100&h=100&fit=crop',
-          category: 'Alfaiataria',
-          city: 'São Paulo',
-          state: 'SP',
-          price: 1500,
-          deadline: 15,
-          status: 'pending',
-          appliedAt: '2024-03-15T10:30:00',
-          message: 'Tenho 8 anos de experiência em vestidos de festa e alfaiataria.',
-          coinCost: 10,
-        },
-        {
-          id: '2',
-          jobId: '102',
-          jobTitle: 'Ajustes de Ternos Empresariais',
-          company: 'Corporate Wear',
-          category: 'Ajustes',
-          city: 'São Paulo',
-          state: 'SP',
-          price: 800,
-          deadline: 7,
-          status: 'accepted',
-          appliedAt: '2024-03-10T14:20:00',
-        },
-        {
-          id: '3',
-          jobId: '103',
-          jobTitle: 'Bordado Personalizado em Camisetas',
-          company: 'Custom Threads',
-          category: 'Bordado',
-          city: 'Rio de Janeiro',
-          state: 'RJ',
-          price: 600,
-          deadline: 10,
-          status: 'rejected',
-          appliedAt: '2024-03-08T09:15:00',
-        },
-        {
-          id: '4',
-          jobId: '104',
-          jobTitle: 'Confecção de Roupas Infantis',
-          company: 'Kids Fashion Co.',
-          companyLogo: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=100&h=100&fit=crop',
-          category: 'Infantil',
-          city: 'Belo Horizonte',
-          state: 'MG',
-          price: 950,
-          deadline: 20,
-          status: 'pending',
-          appliedAt: '2024-03-14T16:45:00',
-          coinCost: 5,
-        },
-        {
-          id: '5',
-          jobId: '105',
-          jobTitle: 'Customização de Jaquetas Jeans',
-          company: 'Urban Style',
-          category: 'Customização',
-          city: 'São Paulo',
-          state: 'SP',
-          price: 450,
-          deadline: 5,
-          status: 'accepted',
-          appliedAt: '2024-03-12T11:00:00',
-        },
-      ];
+      const apiApplications = await listMyApplications();
 
-      setApplications(mockData);
+      const uniqueJobIds = Array.from(
+        new Set(
+          apiApplications
+            .map((app) => app.job?.id)
+            .filter((id): id is string => Boolean(id))
+        )
+      );
+
+      const jobs = new Map<string, Service | null>();
+      await Promise.all(
+        uniqueJobIds.map(async (jobId) => {
+          const job = await fetchServiceById(jobId);
+          jobs.set(jobId, job);
+        })
+      );
+
+      const normalized: Application[] = apiApplications.map((app) => {
+        const jobId = app.job?.id || '';
+        const job = jobId ? jobs.get(jobId) : null;
+        return {
+          id: app.id,
+          jobId,
+          jobTitle: app.job?.title || job?.title || 'Oportunidade',
+          company: job?.company?.name || 'Empresa',
+          companyLogo: job?.company?.logo,
+          category: job?.category || 'N/A',
+          city: job?.city || job?.company?.city || '',
+          state: job?.state || job?.company?.state || '',
+          price: job?.price || 0,
+          deadline: job?.deadline || 0,
+          status: mapApiStatusToUi(app.status),
+          appliedAt: app.createdAt,
+          message: app.message,
+          coinCost: job?.coinCost,
+        };
+      });
+
+      setApplications(normalized);
     } catch (error) {
       console.error('Erro ao carregar candidaturas:', error);
       toast.error('Erro ao carregar suas candidaturas');

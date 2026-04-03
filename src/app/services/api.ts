@@ -344,60 +344,199 @@ const mockServices: Service[] = [
 
 let appliedServices = new Set<string>(['3']); // IDs dos serviços que o usuário já se candidatou
 
-// ========== API FUNCTIONS ==========
-
-export const fetchServices = async (filters?: Partial<{
-  search: string;
-  category: string;
+// Tipos retornados pelo backend (conforme Swagger)
+interface JobResponse {
+  id: string;
+  title: string;
+  description: string;
+  shortDescription?: string;
+  price: number;
+  deadline: number;
   city: string;
-  minPrice: number;
-  maxPrice: number;
+  state: string;
+  category: string;
   contractType: string;
-  sortBy: string;
-}>): Promise<Service[]> => {
-  // Simulando delay de rede
-  await new Promise(resolve => setTimeout(resolve, 800));
+  createdAt: string;
+  featured?: boolean;
+  urgent?: boolean;
+  coinCost?: number;
+  status?: string;
+  applicantsCount?: number;
+  applied?: boolean;
+  company?: {
+    id: string;
+    name: string;
+    city?: string;
+    state?: string;
+    verified?: boolean;
+    ratingAverage?: number;
+    logo?: string;
+  };
+}
+
+interface JobRequestPayload {
+  title: string;
+  description: string;
+  shortDescription?: string;
+  price: number;
+  deadline: number;
+  city: string;
+  state: string;
+  category: string;
+  contractType: string;
+  featured?: boolean;
+  urgent?: boolean;
+  coinCost?: number;
+}
+
+interface ApplicationResponse {
+  id: string;
+  status: string;
+  message?: string;
+  createdAt: string;
+  seamstress?: {
+    id: string;
+    name?: string;
+    city?: string;
+    state?: string;
+    ratingAverage?: number;
+    category?: string;
+  };
+  job?: {
+    id: string;
+    title?: string;
+    companyId?: string;
+  };
+}
+
+const contractTypeApiToUi: Record<string, string> = {
+  FREELA: 'Freela',
+  PJ: 'PJ',
+  CLT: 'CLT',
+  EMPREITADA: 'Empreitada',
+};
+
+const contractTypeUiToApi: Record<string, string> = {
+  Freela: 'FREELA',
+  PJ: 'PJ',
+  CLT: 'CLT',
+  Empreitada: 'EMPREITADA',
+};
+
+const normalizeContractTypeFromApi = (value?: string) => {
+  if (!value) return 'Freela';
+  const upper = value.toUpperCase();
+  return contractTypeApiToUi[upper] || value;
+};
+
+const normalizeContractTypeToApi = (value?: string) => {
+  if (!value || value === 'all') return undefined;
+  return contractTypeUiToApi[value] || value.toUpperCase();
+};
+
+const mapJobResponseToService = (job: JobResponse): Service => ({
+  id: job.id,
+  title: job.title,
+  description: job.description,
+  shortDescription:
+    job.shortDescription ||
+    (job.description ? `${job.description.slice(0, 140)}...` : ''),
+  price: job.price,
+  deadline: job.deadline,
+  city: job.city,
+  state: job.state,
+  category: job.category,
+  contractType: normalizeContractTypeFromApi(job.contractType),
+  createdAt: job.createdAt,
+  featured: Boolean(job.featured),
+  urgent: Boolean(job.urgent),
+  coinCost: job.coinCost,
+  company: {
+    id: job.company?.id || 'company',
+    name: job.company?.name || 'Empresa',
+    logo: job.company?.logo,
+    verified: Boolean(job.company?.verified),
+    city: job.company?.city,
+    state: job.company?.state,
+    ratingAverage: job.company?.ratingAverage,
+  },
+  applied: Boolean(job.applied),
+  status: job.status,
+  applicantsCount: job.applicantsCount,
+});
+
+const mapApplicationStatusToFrontend = (status?: string): Application['status'] => {
+  const upper = (status || '').toUpperCase();
+  if (upper === 'ACCEPTED') return 'accepted';
+  if (upper === 'REJECTED') return 'rejected';
+  return 'pending';
+};
+
+const mapApplicationResponseToApplication = (
+  application: ApplicationResponse
+): Application => ({
+  id: application.id,
+  serviceId: application.job?.id || '',
+  seamstressId: application.seamstress?.id || '',
+  status: mapApplicationStatusToFrontend(application.status),
+  message: application.message || '',
+  createdAt: application.createdAt,
+});
+
+// Reutiliza o mock existente como fallback em caso de erro de rede
+const filterMockServices = async (
+  filters?: Partial<{
+    search: string;
+    category: string;
+    city: string;
+    minPrice: number;
+    maxPrice: number;
+    contractType: string;
+    sortBy: string;
+  }>
+): Promise<Service[]> => {
+  await new Promise((resolve) => setTimeout(resolve, 800));
 
   let filtered = [...mockServices];
 
-  // Aplicar filtros
   if (filters?.search) {
     const search = filters.search.toLowerCase();
-    filtered = filtered.filter(s => 
-      s.title.toLowerCase().includes(search) || 
-      s.description.toLowerCase().includes(search)
+    filtered = filtered.filter(
+      (s) =>
+        s.title.toLowerCase().includes(search) ||
+        s.description.toLowerCase().includes(search)
     );
   }
 
   if (filters?.category && filters.category !== 'all') {
-    filtered = filtered.filter(s => s.category === filters.category);
+    filtered = filtered.filter((s) => s.category === filters.category);
   }
 
   if (filters?.city && filters.city !== 'all') {
-    filtered = filtered.filter(s => s.city === filters.city);
+    filtered = filtered.filter((s) => s.city === filters.city);
   }
 
   if (filters?.contractType && filters.contractType !== 'all') {
-    filtered = filtered.filter(s => s.contractType === filters.contractType);
+    filtered = filtered.filter((s) => s.contractType === filters.contractType);
   }
 
   if (filters?.minPrice !== undefined) {
-    filtered = filtered.filter(s => s.price >= filters.minPrice);
+    filtered = filtered.filter((s) => s.price >= filters.minPrice);
   }
 
   if (filters?.maxPrice !== undefined && filters.maxPrice > 0) {
-    filtered = filtered.filter(s => s.price <= filters.maxPrice);
+    filtered = filtered.filter((s) => s.price <= filters.maxPrice);
   }
 
-  // Ordenação
   if (filters?.sortBy === 'price') {
     filtered.sort((a, b) => b.price - a.price);
   } else if (filters?.sortBy === 'recent') {
-    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    filtered.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 
-  // Atualizar status de aplicação
-  filtered = filtered.map(s => ({
+  filtered = filtered.map((s) => ({
     ...s,
     applied: appliedServices.has(s.id),
   }));
@@ -405,29 +544,84 @@ export const fetchServices = async (filters?: Partial<{
   return filtered;
 };
 
+// ========== API FUNCTIONS ==========
+
+export const fetchServices = async (
+  filters?: Partial<{
+    search: string;
+    category: string;
+    city: string;
+    minPrice: number;
+    maxPrice: number;
+    contractType: string;
+    sortBy: string;
+  }>
+): Promise<Service[]> => {
+  const params = {
+    search: filters?.search,
+    category: filters?.category && filters.category !== 'all' ? filters.category : undefined,
+    city: filters?.city && filters.city !== 'all' ? filters.city : undefined,
+    minPrice: filters?.minPrice,
+    maxPrice: filters?.maxPrice,
+    contractType: normalizeContractTypeToApi(filters?.contractType),
+    sortBy: filters?.sortBy,
+  };
+
+  try {
+    const data = await cachedGet<JobResponse[]>('/api/jobs', {
+      params,
+      cacheMs: 500,
+      errorCooldownMs: 2000,
+    });
+
+    if (!Array.isArray(data)) return [];
+
+    return data.map(mapJobResponseToService);
+  } catch (error) {
+    console.warn('Falha ao buscar jobs na API, usando mock como fallback.', error);
+    return filterMockServices(filters);
+  }
+};
+
 export const fetchFeaturedServices = async (): Promise<Service[]> => {
-  await new Promise(resolve => setTimeout(resolve, 600));
-  
-  const featured = mockServices
-    .filter(s => s.featured)
-    .map(s => ({
-      ...s,
-      applied: appliedServices.has(s.id),
-    }));
-  
-  return featured;
+  try {
+    const data = await cachedGet<JobResponse[]>('/api/jobs', {
+      params: { featured: true },
+      cacheMs: 500,
+      errorCooldownMs: 2000,
+    });
+
+    if (!Array.isArray(data)) return [];
+
+    return data.map(mapJobResponseToService);
+  } catch (error) {
+    console.warn('Falha ao buscar destaques na API, usando mock como fallback.', error);
+    const featured = mockServices
+      .filter((s) => s.featured)
+      .map((s) => ({
+        ...s,
+        applied: appliedServices.has(s.id),
+      }));
+    return featured;
+  }
 };
 
 export const fetchServiceById = async (id: string): Promise<Service | null> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  const service = mockServices.find(s => s.id === id);
-  if (!service) return null;
-  
-  return {
-    ...service,
-    applied: appliedServices.has(id),
-  };
+  try {
+    const data = await cachedGet<JobResponse>(`/api/jobs/${id}`, {
+      cacheMs: 500,
+      errorCooldownMs: 1500,
+    });
+    return data ? mapJobResponseToService(data) : null;
+  } catch (error) {
+    console.warn(`Falha ao buscar job ${id} na API, usando mock como fallback.`, error);
+    const service = mockServices.find((s) => s.id === id);
+    if (!service) return null;
+    return {
+      ...service,
+      applied: appliedServices.has(id),
+    };
+  }
 };
 
 export interface CouturierApiDTO {
@@ -651,28 +845,84 @@ export const purchaseEnterpriseCoins = async (enterpriseId: string, amount: numb
 };
 
 export const applyToService = async (
-  serviceId: string, 
+  serviceId: string,
   message: string
 ): Promise<Application> => {
-  await new Promise(resolve => setTimeout(resolve, 700));
-  
-  // Simular erro se já aplicou
-  if (appliedServices.has(serviceId)) {
-    throw new Error('Você já se candidatou a este serviço');
+  try {
+    const response = await api.post<ApplicationResponse>(`/api/jobs/${serviceId}/apply`, {
+      message,
+    });
+    appliedServices.add(serviceId);
+    return mapApplicationResponseToApplication(response.data);
+  } catch (error: any) {
+    const messageError = extractErrorMessage(error, 'Erro ao enviar candidatura');
+    throw new Error(messageError);
   }
+};
 
-  appliedServices.add(serviceId);
+export const createJob = async (payload: JobRequestPayload): Promise<Service> => {
+  try {
+    const body = {
+      ...payload,
+      contractType: normalizeContractTypeToApi(payload.contractType),
+    };
+    const response = await api.post<JobResponse>('/api/jobs', body);
+    return mapJobResponseToService(response.data);
+  } catch (error: any) {
+    const message = extractErrorMessage(error, 'Erro ao criar job');
+    throw new Error(message);
+  }
+};
 
-  const application: Application = {
-    id: `app-${Date.now()}`,
-    serviceId,
-    seamstressId: 'current-user-id',
-    status: 'pending',
-    message,
-    createdAt: new Date().toISOString(),
-  };
+export const closeJob = async (jobId: string): Promise<Service> => {
+  try {
+    const response = await api.patch<JobResponse>(`/api/jobs/${jobId}/close`);
+    return mapJobResponseToService(response.data);
+  } catch (error: any) {
+    const message = extractErrorMessage(error, 'Erro ao encerrar job');
+    throw new Error(message);
+  }
+};
 
-  return application;
+export const listJobApplications = async (jobId: string): Promise<ApplicationResponse[]> => {
+  try {
+    const data = await cachedGet<ApplicationResponse[]>(`/api/jobs/${jobId}/applications`, {
+      cacheMs: 400,
+      errorCooldownMs: 1500,
+    });
+    return Array.isArray(data) ? data : [];
+  } catch (error: any) {
+    const message = extractErrorMessage(error, 'Erro ao buscar candidaturas do job');
+    throw new Error(message);
+  }
+};
+
+export const updateApplicationStatus = async (
+  applicationId: string,
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED'
+): Promise<ApplicationResponse> => {
+  try {
+    const response = await api.patch<ApplicationResponse>(`/api/applications/${applicationId}/status`, {
+      status,
+    });
+    return response.data;
+  } catch (error: any) {
+    const message = extractErrorMessage(error, 'Erro ao atualizar status da candidatura');
+    throw new Error(message);
+  }
+};
+
+export const listMyApplications = async (): Promise<ApplicationResponse[]> => {
+  try {
+    const data = await cachedGet<ApplicationResponse[]>('/api/applications/me', {
+      cacheMs: 400,
+      errorCooldownMs: 1500,
+    });
+    return Array.isArray(data) ? data : [];
+  } catch (error: any) {
+    const message = extractErrorMessage(error, 'Erro ao carregar suas candidaturas');
+    throw new Error(message);
+  }
 };
 
 const loginMock = async (email: string, password: string): Promise<{ user: User; token: string }> => {

@@ -18,8 +18,13 @@ export interface Service {
     name: string;
     logo?: string;
     verified: boolean;
+    city?: string;
+    state?: string;
+    ratingAverage?: number;
   };
   applied?: boolean; // se o costureiro já se candidatou
+  status?: string;
+  applicantsCount?: number;
 }
 
 export interface User {
