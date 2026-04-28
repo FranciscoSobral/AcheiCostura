@@ -74,7 +74,7 @@ export const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-[#004a3e] via-[#006D5B] to-[#008f77] text-white py-12">
+      <div className="bg-gradient-to-r from-[#004D40] via-[#006D5B] to-[#009688] text-white py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold">

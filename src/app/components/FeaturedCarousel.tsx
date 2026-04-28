@@ -83,7 +83,9 @@ export const FeaturedCarousel = () => {
       {
         breakpoint: 640,
         settings: {
-          slidesToShow: 1,
+          // Garante que mostre apenas 1 no celular
+          slidesToShow: 1, 
+          slidesToScroll: 1,
           infinite: services.length > 1,
         },
       },
@@ -118,15 +120,28 @@ export const FeaturedCarousel = () => {
       <div className="px-2"> {/* Reduzi o padding lateral para as setas flutuarem melhor */}
         <Slider {...settings} className="featured-slider">
           {services.map((service) => (
-            <div key={service.id} className="px-3 py-4">
+            // A classe h-full garante que o container do slide ocupe toda a altura
+            <div key={service.id} className="px-3 py-4 h-full">
               <ServiceCard service={service} />
             </div>
           ))}
         </Slider>
-      </div>\
+      </div>
 
-      {/* CSS Inline para garantir que o estilo "não personalizado" do Slick suma de vez */}
+      {/* CSS Inline atualizado para corrigir a altura e largura dos slides */}
       <style>{`
+        /* Garante que todos os slides tenham a mesma altura */
+        .featured-slider .slick-track {
+          display: flex !important;
+        }
+        .featured-slider .slick-slide {
+          height: auto;
+        }
+        /* Faz a div interna que envolve o card preencher o slide */
+        .featured-slider .slick-slide > div {
+          height: 100%;
+        }
+        
         .featured-slider .slick-dots li {
           width: auto;
           height: auto;

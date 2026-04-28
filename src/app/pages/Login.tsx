@@ -51,7 +51,7 @@ export const Login = () => {
           <img
             src={logo}
             alt="Logo Achei Costura"
-            className="mx-auto h-20 w-20 p-1.5 rounded-xl bg-gradient-to-br"
+            className="mx-auto h-20 w-20 p-1.5 rounded-xl  mb-2 object-contain"
           />
           <CardTitle className="text-2xl font-bold tracking-tight text-gray-900">
             Entrar no Achei Costura

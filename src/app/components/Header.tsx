@@ -25,34 +25,41 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b-2 border-gray-100 bg-white shadow-sm">
       <div className="container mx-auto px-4 py-3 sm:py-4">
-        <div className="flex items-center justify-between gap-4">
-
+        <div className="flex items-center justify-between gap-2">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0 group">
-            <img
-              src={logo}
-              alt="Logo Achei Costura"
-              className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-contain transition-transform group-hover:scale-105"
-            />
-            <span className="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900">
-              AcheiCostura
-            </span>
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <img src={logo} alt="Logo Achei Costura" className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-gradient-to-br 500 600 object-contain" />
+            <span className="text-lg sm:text-xl font-semibold tracking-tight">AcheiCostura</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 flex-1 justify-center">
-            <Link to="/" className="text-sm xl:text-base font-medium text-gray-700 hover:text-[#006D5B] transition-colors">Serviços</Link>
-            <Link to="/my-applications" className="text-sm xl:text-base font-medium text-gray-700 hover:text-[#006D5B] transition-colors">Minhas Candidaturas</Link>
-            <Link to="/empresa/dashboard" className="text-sm xl:text-base font-medium text-gray-700 hover:text-[#006D5B] transition-colors">Minhas Vagas</Link>
-            <Link to="/empresa/buscar" className="text-sm xl:text-base font-medium text-gray-700 hover:text-[#006D5B] transition-colors">Encontre Costureiros</Link>
-            <Link to="/planos" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">Planos</Link>
-            <Link to="/sobre-nos" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">Sobre Nós</Link>
-            <Link to="/contato" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">Contato</Link>
+          {/* Desktop Navigation - Alterado de md para lg para evitar quebra em tablets */}
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
+            <Link to="/" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">
+              Serviços
+            </Link>
+            <Link to="/my-applications" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">
+              Minhas Candidaturas
+            </Link>
+            <Link to="/empresa/dashboard" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">
+              Minhas Vagas
+            </Link>
+            <Link to="/empresa/buscar" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">
+              Encontre Costureiros
+            </Link>
+            <Link to="/planos" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">
+              Planos
+            </Link>
+            <Link to="/sobre-nos" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">
+              Sobre Nós
+            </Link>
+            <Link to="/contato" className="text-gray-700 hover:text-[#006D5B] font-medium transition-colors">
+              Contato
+            </Link>
           </nav>
 
-          {/* User Section & Mobile Toggle */}
+          {/* User Section */}
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             {user ? (
               <>
@@ -66,33 +73,28 @@ export const Header = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 hover:opacity-80 transition-opacity outline-none">
-                      <Avatar className="h-10 w-10 border border-gray-200">
-                        <AvatarImage src={user.avatar} alt={user.name || 'Usuário'} className="object-cover" />
+                      <Avatar className="h-9 w-9 border border-gray-200">
+                        <AvatarImage src={user.avatar} alt={user.name || 'Usuário'} />
                         <AvatarFallback className="bg-gray-100 text-gray-700 font-medium">
                           {user.name?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="hidden md:block text-sm font-medium text-gray-800 max-w-[100px] truncate">
-                        {user.name}
-                      </span>
+                      <span className="hidden md:block text-sm font-medium text-gray-800">{user.name}</span>
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 mt-2">
-                    <DropdownMenuLabel className="font-medium text-gray-900">Minha Conta</DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="w-56 border-2 border-gray-100 shadow-lg">
+                    <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-
                     <DropdownMenuItem onClick={() => navigate('/perfil')} className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       Perfil
                     </DropdownMenuItem>
-
-                    <DropdownMenuItem className="sm:hidden cursor-default text-amber-600">
+                    <DropdownMenuItem className="sm:hidden cursor-default">
                       <Coins className="mr-2 h-4 w-4" />
                       {user.coins} moedas
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
-
                     <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sair
@@ -101,18 +103,17 @@ export const Header = () => {
                 </DropdownMenu>
               </>
             ) : (
-              // Botões Animados para Desktop
-              <div className="hidden sm:flex items-center gap-2">
-                <Button
-                  className="bg-transparent text-[#006D5B] font-medium transition-all duration-300 hover:bg-[#006D5B] hover:text-white hover:scale-105 active:scale-95 active:bg-[#006D5B] active:text-white"
-                  variant="ghost"
+              <div className="flex items-center gap-2">
+                <Button 
+                  className="bg-transparent hover:bg-gray-100 text-[#006D5B] px-2 sm:px-4 text-sm sm:text-base border-2 border-transparent" 
+                  variant="ghost" 
                   onClick={() => navigate('/login')}
                 >
                   Entrar
                 </Button>
-                <Button
-                  onClick={() => navigate('/register')}
-                  className="bg-[#006D5B] text-white font-medium shadow-sm transition-all duration-300 hover:bg-[#005a4b] hover:shadow-md hover:scale-105 active:scale-95 active:bg-[#006D5B]"
+                <Button 
+                  onClick={() => navigate('/register')} 
+                  className="bg-[#006D5B] hover:bg-[#005749] text-white px-3 sm:px-4 text-sm sm:text-base border-2 border-[#006D5B]"
                 >
                   Cadastrar
                 </Button>
@@ -121,7 +122,7 @@ export const Header = () => {
 
             {/* Mobile Menu Button */}
             <button
-              className="lg:hidden p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors focus:outline-none"
+              className="lg:hidden p-2 -mr-2 text-gray-700 hover:text-gray-900 focus:outline-none"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -151,7 +152,7 @@ export const Header = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className="text-gray-700 font-medium hover:text-[#006D5B] hover:bg-[#006D5B]/5 transition-colors py-3 px-3 rounded-md"
+                className="text-gray-700 font-medium hover:text-[#006D5B] hover:bg-gray-50 transition-colors py-3 px-2 border-b border-gray-50 last:border-0"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}

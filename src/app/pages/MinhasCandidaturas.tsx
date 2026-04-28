@@ -198,7 +198,7 @@ export function MinhasCandidaturas() {
                     }
                   </p>
                   <Link to="/">
-                    <Button className="bg-[#006D5B] hover:bg-[#005a4b]">
+                    <Button className="bg-[#006D5B] hover:bg-[#006D5B]/90 text-white">
                       Explorar Serviços
                     </Button>
                   </Link>

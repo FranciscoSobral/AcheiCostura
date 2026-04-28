@@ -41,7 +41,7 @@ export const SearchBar = ({ value, onChange, onSearch }: SearchBarProps) => {
         <Button 
           onClick={onSearch} 
           size="lg"
-          className="h-12 px-6 bg-[#006D5B] hover:bg-[#005a4b]"
+          className="h-12 px-6 bg-[#006D5B] hover:bg-[#006D5B]"
         >
           Buscar
         </Button>
