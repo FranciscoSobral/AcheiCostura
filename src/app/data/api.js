@@ -10,7 +10,7 @@ import axios from 'axios';
 
 // Configuração base da API
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -363,6 +363,16 @@ export const getEstatisticas = async () => {
     };
   }
 };
-
+// Exemplo de como deve estar no seu arquivo api.js
+export const gerarPagamentoPix = async (dados) => {
+  try {
+    const response = await api.post('/pix/gerar', dados);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao gerar PIX:', error);
+    throw error;
+  }
+};
 // Exportar instância do axios para uso customizado
 export default api;
+

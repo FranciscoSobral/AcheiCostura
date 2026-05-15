@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router';
+import { BrowserRouter, Routes, Route } from 'react-router-dom'; 
 import { AuthProvider } from './context/AuthContext';
+import Inicio from './pages/Inicio';
 import { Header } from './components/Header';
 import { Home } from './pages/Home';
 import { ServiceDetail } from './pages/ServiceDetail';
@@ -17,35 +18,29 @@ import ContatoPage from './pages/contato';
 import SobreNosPage from './pages/sobre';
 import PlanosPage from './pages/planos';
 
-SobreNosPage
 
 import HomeServicos from './components/HomeServicos';
 import { Toaster } from './components/ui/sonner';
 
 export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <AuthProvider>
         <div className="min-h-screen bg-gray-50">
-          <Header />
+          {/* O Header fica dentro do BrowserRouter para que o useNavigate funcione */}
+          <Header /> 
+          
           <Routes>
-            {/* Home padrão (versão cards) */}
+            <Route path="/" element={<Inicio />} />
             <Route path="/" element={<Home />} />
-            
-            {/* Home alternativa (versão integrada com sistema de moedas) */}
             <Route path="/oportunidades" element={<HomeServicos />} />
-            
-            {/* Detalhes do serviço */}
             <Route path="/service/:id" element={<ServiceDetail />} />
             
-            {/* Autenticação */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<CadastroPage />} />
 
-            {/* Minhas Candidaturas */}
             <Route path="/my-applications" element={<MinhasCandidaturas />} />
 
-            {/* Área da Empresa */}
             <Route path="/empresa/dashboard" element={<CompanyDashboard />} />
             <Route path="/empresa/vaga/:id/candidatos" element={<CompanyJobCandidates />} />
             <Route path="/empresa/buscar" element={<BuscaCostureiros />} />
@@ -54,22 +49,18 @@ export default function App() {
             <Route path="/contato" element={<ContatoPage />} />
             <Route path="/sobre-nos" element={<SobreNosPage />} />
             <Route path="/planos" element={<PlanosPage />} />
+
+            
             <Route path="/perfil" element={<Profile />} />
             <Route path="/profile" element={<Profile />} />
-            {/* Páginas institucionais 
-            
-            
-            
-            <Route path="/anuncie" element={<AnunciePage />} />
-            <Route path="/pagamento" element={<PagamentoPage />} />
-            */}
 
-            {/* Fallback */}
+            {/* Fallback para rotas não encontradas */}
             <Route path="*" element={<Home />} />
           </Routes>
+          
           <Toaster position="top-right" />
         </div>
       </AuthProvider>
-    </Router>
+    </BrowserRouter>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   fetchCouturiers,
@@ -570,38 +570,39 @@ export const BuscaCostureiros = () => {
                           )}
                         </div>
 
-                        <Button
-                              variant="outline"
-                              className="w-full border-[#006D5B] text-[#006D5B] hover:bg-[#F2F9F7] flex gap-2"
-                              onClick={() => navigate(`/costureiro/${c.id}`)}
-                            >
-                              Ver perfil completo
-                            </Button>
+                        <div className="mt-auto pt-4 border-t border-gray-100 flex gap-3">
+                          {/* Botão Perfil - Com hover cinza suave e bordas arredondadas padrão */}
+                          <Button
+                            variant="outline"
+                            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-[#006D5B] transition-colors rounded-md"
+                            onClick={() => navigate(`/costureiro/${c.id}`)}
+                          >
+                            Perfil
+                          </Button>
 
-                        <div className="mt-auto pt-4 border-t border-gray-100">
-                          {isLocked ? (
-                            <Button
-                              className="w-full bg-[#006D5B] hover:bg-[#005a4b] text-white flex gap-2 items-center"
-                              onClick={() => handleUnlock(c.id, c.name)}
-                              disabled={desbloqueandoId === c.id}
-                            >
-                              {desbloqueandoId === c.id ? (
-                                <span className="animate-pulse">Desbloqueando...</span>
-                              ) : (
-                                <>
-                                  <Unlock className="w-4 h-4" /> Desbloquear (1 moeda)
-                                </>
-                              )}
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              className="w-full border-[#006D5B] text-[#006D5B] hover:bg-[#F2F9F7] flex gap-2"
-                              onClick={() => navigate(`/costureiro/${c.id}`)}
-                            >
-                              Ver perfil completo
-                            </Button>
-                          )}
+                          {/* Botão de Ação (Desbloquear) */}
+                          <div className="flex-1">
+                            {isLocked ? (
+                              <Button
+                                className="w-full bg-[#006D5B] hover:bg-[#005a4b] text-white flex gap-2 items-center justify-center rounded-md shadow-sm transition-all"
+                                onClick={() => handleUnlock(c.id, c.name)}
+                                disabled={desbloqueandoId === c.id}
+                              >
+                                {desbloqueandoId === c.id ? (
+                                  <span className="animate-pulse text-sm">Aguarde...</span>
+                                ) : (
+                                  <>
+                                    <Unlock className="w-4 h-4" />
+                                    <span className="text-sm">Desbloquear</span>
+                                  </>
+                                )}
+                              </Button>
+                            ) : (
+                              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm">
+                                Mensagem
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

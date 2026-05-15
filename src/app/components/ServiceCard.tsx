@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Service } from '../types';
 import { Card, CardContent, CardFooter } from './ui/card';
 import { Button } from './ui/button';
@@ -40,7 +40,7 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
       className="h-full"
     >
       <Card className="h-full hover:shadow-lg transition-shadow duration-300 relative overflow-hidden flex flex-col">
-        
+
         {/* Badges de Status - Ficam no topo direito */}
         <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 items-end">
           {service.urgent && (
@@ -63,7 +63,7 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
 
         {/* Padding reduzido (p-4 ao invés de pt-6) para o card ficar mais compacto */}
         <CardContent className="p-4 flex-1 flex flex-col">
-          
+
           {/* Empresa - Avatar menor (w-8 h-8) e margem reduzida */}
           <div className="flex items-center gap-2 mb-3 pr-24">
             {service.company.logo ? (
@@ -106,20 +106,28 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
           </div>
 
           {/* Informações Agrupadas (A caixinha de organização no final) */}
-          <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 grid grid-cols-2 gap-2.5 mt-auto">
-            <div className="flex items-center gap-1.5 text-sm">
-              <DollarSign className="w-4 h-4 text-green-600 flex-shrink-0" />
-              <span className="font-bold text-green-700">
-                R$ {service.price.toLocaleString('pt-BR')}
-              </span>
+          <div className="mt-auto pt-4 space-y-2.5">
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-[#006D5B]" />
+                <span className="text-base font-bold text-gray-900">
+                  R$ {service.price.toLocaleString('pt-BR')}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1 text-gray-500">
+                <Clock className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">{service.deadline} dias</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-600">
-              <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="font-medium">{service.deadline} dias</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-600 col-span-2 pt-1 border-t border-gray-200/60">
+
+            {/* Linha de Localização com separador sutil */}
+            <div className="flex items-center gap-1.5 pt-2 border-t border-gray-100 text-gray-500">
               <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-gray-400" />
-              <span className="truncate">{service.city} - {service.state}</span>
+              <span className="text-xs truncate">
+                {service.city}, {service.state}
+              </span>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Service } from '../types';
 import { fetchServiceById, applyToService } from '../services/api';
 import { useAuth } from '../context/AuthContext';

@@ -425,7 +425,7 @@ const Step2InformacoesBasicas: React.FC<Step2Props> = ({ onNext, onBack }) => {
           </button>
           <button
             type="submit"
-            className="btn-next flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+            className="btn-next flex-1  bg-[#006D5B] text-white py-3 rounded-lg font-medium hover:bg-[#005a4b] transition-colors"
           >
             Salvar e Continuar
           </button>

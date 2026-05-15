@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCadastro } from '../context/CadastroContext';
 import { updateUser, uploadOtherImages, uploadProfileImage } from '../services/api';
 import SpeechButton from './SpeechButton';
@@ -194,7 +194,7 @@ const Step3PerfilProfissional: React.FC<Step3Props> = ({ onBack }) => {
                 </button>
               </div>
             ) : (
-              <div className="upload-area border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-500 transition-colors">
+              <div className="upload-area border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#005a4b] transition-colors">
                 <input
                   type="file"
                   id="profileImage"
@@ -236,7 +236,7 @@ const Step3PerfilProfissional: React.FC<Step3Props> = ({ onBack }) => {
             />
             <label
               htmlFor="otherImages"
-              className="upload-label border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors cursor-pointer block"
+              className="upload-label border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#005a4b] transition-colors cursor-pointer block"
             >
               <span className="upload-icon text-3xl block mb-2">🖼️</span>
               <span className="block text-gray-700 font-medium mb-1">
@@ -286,7 +286,7 @@ const Step3PerfilProfissional: React.FC<Step3Props> = ({ onBack }) => {
         />
 
         {/* Descrição */}
-        <div className="form-section bg-gray-50 p-4 rounded-lg">
+        <div className="form-section bg-#005a4b p-4 rounded-lg">
           <h3 className="text-lg font-medium text-gray-800 mb-4">Sobre você</h3>
           <div className="form-group">
             <div className="form-label-container flex items-center justify-between mb-2">
@@ -332,7 +332,7 @@ const Step3PerfilProfissional: React.FC<Step3Props> = ({ onBack }) => {
               </button>
               <button
                 type="button"
-                className="btn-finish flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+                className="btn-finish flex-1  bg-[#006D5B] text-white py-3 rounded-lg font-medium hover:bg-[#005a4b] transition-colors disabled:opacity-50"
                 onClick={() => handleSubmit('finish')}
                 disabled={saving}
               >

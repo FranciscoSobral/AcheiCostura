@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaHandshake, FaUsers, FaLightbulb, FaRocket } from 'react-icons/fa';
 // AQUI: Importamos o SpeechButton2 (o verde) em vez do original
 import './style.css';

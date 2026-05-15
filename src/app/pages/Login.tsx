@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { login } from '../services/api';
 import { Button } from '../components/ui/button';
@@ -66,7 +66,7 @@ export const Login = () => {
             {error && (
               <Alert variant="destructive" className="bg-red-50 text-red-600 border-red-200">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+                <p>Credenciais incorretas</p>
               </Alert>
             )}
 

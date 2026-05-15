@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCadastro, CadastroProvider } from '../context/CadastroContext';
 import Step1CriarConta from '../components/Step1CriarConta';
 import Step2InformacoesBasicas from '../components/Step2InformacoesBasicas';
